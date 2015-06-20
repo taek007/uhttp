@@ -57,6 +57,7 @@ void handle_coming_socket(void *_sock){
     int client_socket = *(int*)&_sock;
 
     http_request request;
+    memset(&request,0, sizeof(request));
     wrap_http_request(client_socket, &request);
     handle_http_request(&request);
 }
