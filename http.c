@@ -27,7 +27,7 @@ http_request *wrap_http_request(int coming_socket, http_request *request) {
 
     token_remain = get_http_head(token_remain, request);
 
-    token_remain += 4;
+    token_remain += 4;  //  skip 2 \r\n
 
     get_http_content(token_remain, request);
 
@@ -55,7 +55,7 @@ char* get_request_line(char* buffer, http_request* request){
     }
     request->version = get_http_version(version);
 
-    return buffer;
+    return buffer + 1;  //  skip the \n at last
 }
 
 char* get_http_content(char* start, http_request* request){
@@ -78,6 +78,7 @@ char* get_http_content(char* start, http_request* request){
 char* get_http_head(char*token_remain, http_request* request){
 
     size_t head_size = 0;
+
     char *head_start = token_remain;
     char *head_end = strstr(token_remain, "\r\n\r\n");
     if (head_end == NULL) {
