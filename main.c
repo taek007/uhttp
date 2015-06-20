@@ -57,8 +57,7 @@ void handle_coming_socket(void *_sock){
 }
 
 
-int main(int argc, char *argv[]) {
-
+void start_http_server(){
 
     int server_socket = create_server_socket(8000);
     int client_socket;
@@ -83,7 +82,12 @@ int main(int argc, char *argv[]) {
     }
 
     close(server_socket);
+}
 
+
+int main(int argc, char *argv[]) {
+
+    start_http_server();
     return 0;
 }
 
