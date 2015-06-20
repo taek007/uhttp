@@ -15,4 +15,6 @@ void handle_coming_socket(void *_sock);
 
 void start_http_server();
 
+int catHTML(int sock, char* path);
+
 #endif //UHTTP_SERVER_H

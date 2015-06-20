@@ -12,20 +12,29 @@
 #include "server.h"
 
 
-void handle_http_request(http_request* request){
+void handle_http_request(http_request *request) {
 
     char response[] = "HTTP/1.1 200 OK"CRLF
-    "Server: NHTTP"CRLF
-    "Content-Type: text/html;"CRLF CRLF
-    "<h1>It works!</h1>";
+            "Server: NHTTP"CRLF
+            "Content-Type: text/html;"CRLF CRLF
+            "<h1>It works!</h1>";
 
-    send(request->socket, response, strlen(response), 0);
+    char *token_remain = request->path;
+    char ext[10];
+
+    strcpy(ext, strsep(&token_remain, "."));
+
+    if (0 == strcmp(ext, "html")) {
+        catHTML(request->socket, request->path);
+    } else {
+        send(request->socket, response, strlen(response), 0);
+    }
 
     free_http_request(request);
 }
 
 
-int create_server_socket(unsigned short port){
+int create_server_socket(unsigned short port) {
 
     int server_socket;
     struct sockaddr_in server_address;
@@ -52,18 +61,18 @@ int create_server_socket(unsigned short port){
 }
 
 
-void handle_coming_socket(void *_sock){
+void handle_coming_socket(void *_sock) {
 
-    int client_socket = *(int*)&_sock;
+    int client_socket = *(int *) &_sock;
 
     http_request request;
-    memset(&request,0, sizeof(request));
+    memset(&request, 0, sizeof(request));
     wrap_http_request(client_socket, &request);
     handle_http_request(&request);
 }
 
 
-void start_http_server(){
+void start_http_server() {
 
     int server_socket = create_server_socket(8000);
     int client_socket;
@@ -88,4 +97,31 @@ void start_http_server(){
     }
 
     close(server_socket);
+}
+
+int catHTML(int sock, char *path) {
+
+    char buf[1024];
+    FILE *fp;
+
+    char status[] = "HTTP/1.1 200 OK"CRLF;
+    char header[] = "Server: NHTTP"CRLF
+            "Content-Type: text/html;"CRLF CRLF;
+
+    write(sock, status, strlen(status));
+    write(sock, status, strlen(header));
+
+    fp = fopen(path, "r");
+
+    if (NULL == fp) {
+        return 404;
+    }
+
+    fgets(buf, sizeof(buf), fp);
+    while (!feof(fp)) {
+        write(sock, buf, strlen(buf));
+        fgets(buf, sizeof(buf), fp);
+    }
+
+    fclose(fp);
 }
