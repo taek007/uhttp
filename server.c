@@ -11,6 +11,7 @@
 
 #include "server.h"
 
+#define WWW_ROOT "/home/hackeris"
 
 void handle_http_request(http_request *request) {
 
@@ -19,14 +20,25 @@ void handle_http_request(http_request *request) {
             "Content-Type: text/html;"CRLF CRLF
             "<h1>It works!</h1>";
 
-    char *token_remain = request->path;
-    char ext[10];
+    char* ext = index(request->path, '.');
 
-    strcpy(ext, strsep(&token_remain, "."));
+    if(ext != NULL) {
 
-    if (0 == strcmp(ext, "html")) {
-        catHTML(request->socket, request->path);
-    } else {
+        ext += 1;
+        if (0 == strcmp(ext, "html")
+            || 0 == strcmp(ext, "css")
+            || 0 == strcmp(ext, "js")) {
+
+            cat_text_file(request->socket, request->path);
+        } else if (0 == strcmp(ext, "jpg")
+                   || 0 == strcmp(ext, "ico")
+                   || 0 == strcmp(ext, "png")){
+            cat_binary_file(request->socket, request->path);
+        }
+        else {
+            send(request->socket, response, strlen(response), 0);
+        }
+    }else{
         send(request->socket, response, strlen(response), 0);
     }
 
@@ -99,7 +111,7 @@ void start_http_server() {
     close(server_socket);
 }
 
-int catHTML(int sock, char *path) {
+int cat_text_file(int sock, char *path) {
 
     char buf[1024];
     FILE *fp;
@@ -108,10 +120,14 @@ int catHTML(int sock, char *path) {
     char header[] = "Server: NHTTP"CRLF
             "Content-Type: text/html;"CRLF CRLF;
 
-    write(sock, status, strlen(status));
-    write(sock, status, strlen(header));
+    char filepath[260];
+    strcpy(filepath, WWW_ROOT);
+    strcat(filepath,path);
 
-    fp = fopen(path, "r");
+    write(sock, status, strlen(status));
+    write(sock, header, strlen(header));
+
+    fp = fopen(filepath, "r");
 
     if (NULL == fp) {
         return 404;
@@ -121,6 +137,37 @@ int catHTML(int sock, char *path) {
     while (!feof(fp)) {
         write(sock, buf, strlen(buf));
         fgets(buf, sizeof(buf), fp);
+    }
+
+    fclose(fp);
+}
+
+int cat_binary_file(int sock, char *path){
+
+    char buf[1024];
+    FILE *fp;
+
+    char status[] = "HTTP/1.1 200 OK"CRLF;
+    char header[] = "Server: NHTTP"CRLF
+            "Content-Type: image/jpeg;"CRLF CRLF;
+
+    char filepath[260];
+    strcpy(filepath, WWW_ROOT);
+    strcat(filepath,path);
+
+    write(sock, status, strlen(status));
+    write(sock, header, strlen(header));
+
+    fp = fopen(filepath, "rb");
+
+    if (NULL == fp) {
+        return 404;
+    }
+
+    size_t n = fread(buf, 1,sizeof(buf),fp);
+    while (!feof(fp)) {
+        write(sock, buf, n);
+        n = fread(buf, 1,sizeof(buf),fp);
     }
 
     fclose(fp);
