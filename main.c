@@ -34,7 +34,7 @@ int create_server_socket(unsigned short port){
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_address.sin_port = htons(8000);
+    server_address.sin_port = htons(port);
 
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
@@ -44,6 +44,16 @@ int create_server_socket(unsigned short port){
         exit(2);
     }
     return server_socket;
+}
+
+
+void handle_coming_socket(void *_sock){
+
+    int client_socket = *(int*)&_sock;
+
+    http_request request;
+    wrap_http_request(client_socket, &request);
+    handle_http_request(&request);
 }
 
 
@@ -69,9 +79,7 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        http_request request;
-        wrap_http_request(client_socket, &request);
-        handle_http_request(&request);
+        handle_coming_socket(client_socket);
     }
 
     close(server_socket);
