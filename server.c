@@ -20,7 +20,7 @@ void handle_http_request(http_request *request) {
             "Content-Type: text/html;"CRLF CRLF
             "<h1>It works!</h1>";
 
-    char* ext = index(request->path, '.');
+    char* ext = strrchr(request->path, '.');
 
     if(ext != NULL) {
 
