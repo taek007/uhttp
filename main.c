@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -21,10 +20,10 @@ void handle_http_request(http_request* request){
 }
 
 
-int main(int argc, char *argv[]) {
+int create_server_socket(unsigned short port){
 
-    int server_socket, client_socket;
-    struct sockaddr_in server_addr;
+    int server_socket;
+    struct sockaddr_in server_address;
     int opt = 1;
 
     if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -32,18 +31,27 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(8000);
+    memset(&server_address, 0, sizeof(server_address));
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_address.sin_port = htons(8000);
 
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    if (bind(server_socket, (struct sockaddr *) &server_addr,
-             sizeof(server_addr)) == -1) {
+    if (bind(server_socket, (struct sockaddr *) &server_address,
+             sizeof(server_address)) == -1) {
         printf("bind socket error: %s(errno: %d)\n", strerror(errno), errno);
         exit(2);
     }
+    return server_socket;
+}
+
+
+int main(int argc, char *argv[]) {
+
+
+    int server_socket = create_server_socket(8000);
+    int client_socket;
 
     if (listen(server_socket, 10) == -1) {
         printf("listen socket error: %s(errno: %d)\n", strerror(errno), errno);
