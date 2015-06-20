@@ -19,4 +19,6 @@ int cat_text_file(int sock, char *path);
 
 int cat_binary_file(int sock, char *path);
 
+int cat_php_file(http_request* request);
+
 #endif //UHTTP_SERVER_H

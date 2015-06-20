@@ -37,12 +37,19 @@ http_request *wrap_http_request(int coming_socket, http_request *request) {
 char* get_request_line(char* buffer, http_request* request){
 
     char method[10];
-    char path[250];
+    char path[1024];
     char version[20];
+    char *query;
 
     strcpy(method, strsep(&buffer, " "));
     strcpy(path, strsep(&buffer, " "));
     strcpy(version, strsep(&buffer, "\r\n"));
+    query = index(path, '?');
+    if(query != NULL){
+        *query = '\0';
+        query++;
+        request->query = strdup(query);
+    }
 
     logoutf("%s %s %s\n",method, path, version);
 
@@ -68,6 +75,10 @@ char* get_http_content(char* start, http_request* request){
         request->content = mem_alloc(content_length + 1);
         request->content[content_length] = '\0';
         memcpy(request->content, start, content_length);
+
+        if(request->method==METHOD_POST){
+            request->query = strdup(request->content);
+        }
 
         return request->content;
     }
@@ -155,5 +166,10 @@ void free_http_request(http_request* request) {
         mem_free(request->path);
         request->path = NULL;
     }
+    if(request->query != NULL){
+        mem_free(request->query);
+        request->query = NULL;
+    }
     close(request->socket);
 }
+

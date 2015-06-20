@@ -24,6 +24,7 @@ typedef struct _http_request {
     unsigned int version;
     int method;
     char* path;
+    char* query;
     http_request_head head;
     char* content;
     int socket;

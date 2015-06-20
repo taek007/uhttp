@@ -8,8 +8,11 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
 
 #include "server.h"
+#include "fastcgi.h"
+#include "mem.h"
 
 #define WWW_ROOT "/home/hackeris"
 
@@ -20,9 +23,9 @@ void handle_http_request(http_request *request) {
             "Content-Type: text/html;"CRLF CRLF
             "<h1>It works!</h1>";
 
-    char* ext = strrchr(request->path, '.');
+    char *ext = strrchr(request->path, '.');
 
-    if(ext != NULL) {
+    if (ext != NULL) {
 
         ext += 1;
         if (0 == strcmp(ext, "html")
@@ -32,13 +35,15 @@ void handle_http_request(http_request *request) {
             cat_text_file(request->socket, request->path);
         } else if (0 == strcmp(ext, "jpg")
                    || 0 == strcmp(ext, "ico")
-                   || 0 == strcmp(ext, "png")){
+                   || 0 == strcmp(ext, "png")) {
             cat_binary_file(request->socket, request->path);
+        } else if (0 == strcmp(ext, "php")) {
+            cat_php_file(request);
         }
         else {
             send(request->socket, response, strlen(response), 0);
         }
-    }else{
+    } else {
         send(request->socket, response, strlen(response), 0);
     }
 
@@ -122,7 +127,7 @@ int cat_text_file(int sock, char *path) {
 
     char filepath[260];
     strcpy(filepath, WWW_ROOT);
-    strcat(filepath,path);
+    strcat(filepath, path);
 
     write(sock, status, strlen(status));
     write(sock, header, strlen(header));
@@ -142,7 +147,7 @@ int cat_text_file(int sock, char *path) {
     fclose(fp);
 }
 
-int cat_binary_file(int sock, char *path){
+int cat_binary_file(int sock, char *path) {
 
     char buf[1024];
     FILE *fp;
@@ -153,7 +158,7 @@ int cat_binary_file(int sock, char *path){
 
     char filepath[260];
     strcpy(filepath, WWW_ROOT);
-    strcat(filepath,path);
+    strcat(filepath, path);
 
     write(sock, status, strlen(status));
     write(sock, header, strlen(header));
@@ -164,11 +169,117 @@ int cat_binary_file(int sock, char *path){
         return 404;
     }
 
-    size_t n = fread(buf, 1,sizeof(buf),fp);
+    size_t n = fread(buf, 1, sizeof(buf), fp);
     while (!feof(fp)) {
         write(sock, buf, n);
-        n = fread(buf, 1,sizeof(buf),fp);
+        n = fread(buf, 1, sizeof(buf), fp);
     }
 
     fclose(fp);
+}
+
+int cat_php_file(http_request *request) {
+
+    int sock;
+    struct sockaddr_in serv_addr;
+    ssize_t str_len;
+    size_t content_length_r;
+    char msg[50];
+    char buf[1024];
+
+    char status[] = "HTTP/1.1 200 OK"CRLF;
+    char header[] = "Server: NHTTP"CRLF;
+
+    sock = socket(PF_INET, SOCK_STREAM, 0);
+
+    if (-1 == sock) {
+        return 404;
+    }
+
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = inet_addr(FASTCGI_HOST);
+    serv_addr.sin_port = htons(FASTCGI_PORT);
+
+    if (-1 == connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) {
+        return 404;
+    }
+
+    FCGI_BeginRequestRecord begin_record;
+    begin_record.header = makeHeader(FCGI_BEGIN_REQUEST, FASTCGI_REQUEST_ID,
+                                    sizeof(begin_record.body), 0);
+    begin_record.body = makeBeginRequestBody(FCGI_RESPONDER);
+
+    str_len = write(sock, &begin_record, sizeof(begin_record));
+    if (-1 == str_len) {
+        return 404;
+    }
+
+    strcpy(msg, "/home/hackeris");
+    strcat(msg, request->path);
+
+    char *params[][2] = {
+            {"SCRIPT_FILENAME", msg},
+            {"REQUEST_METHOD",  request->method ? "POST" : "GET"},
+            {"QUERY_STRING", request->query ? request->query : NULL},
+            {NULL,                NULL}
+    };
+
+    size_t i,content_length, padding_length;
+    FCGI_ParamsRecord *params_record;
+    for(i = 0; params[i][0] != NULL; i++){
+        if(params[i][1] == NULL){
+            continue;
+        }
+        content_length = strlen(params[i][0]) + strlen(params[i][1]) + 2;
+        padding_length = (content_length % 8) == 0 ? 0 : 8 - (content_length % 8);
+        params_record = mem_alloc(
+                sizeof(FCGI_ParamsRecord) + content_length + padding_length);
+        params_record->nameLength = (unsigned char)strlen(params[i][0]);
+        params_record->valueLength = (unsigned char)strlen(params[i][1]);
+        params_record->header = makeHeader(FCGI_PARAMS,
+                                           FASTCGI_REQUEST_ID,content_length,padding_length);
+        memset(params_record->data,0, content_length+padding_length);
+        memcpy(params_record->data,params[i][0], strlen(params[i][0]));
+        memcpy(params_record->data + strlen(params[i][0]),
+               params[i][1], strlen(params[i][1]));
+        str_len = write(sock, params_record, 8 + content_length + padding_length);
+
+        if(-1 == str_len){
+            return 404;
+        }
+
+        free(params_record);
+    }
+
+    FCGI_Header stdin_header;
+    stdin_header = makeHeader(FCGI_STDIN,FASTCGI_REQUEST_ID,0,0);
+    write(sock,&stdin_header,sizeof(stdin_header));
+
+    FCGI_Header response_header;
+    char* message;
+    str_len = read(sock,&response_header,sizeof(response_header));
+    if(-1 == str_len){
+        return 404;
+    }
+
+    if(response_header.type == FCGI_STDOUT){
+        content_length_r = ((size_t)response_header.contentLengthB1 << 8)
+                           + ((size_t)response_header.contentLengthB0);
+        message = (char*)mem_alloc(content_length_r);
+        read(sock,message,content_length_r);
+    }
+    if(response_header.type == FCGI_STDERR){
+        content_length_r = ((size_t)response_header.contentLengthB1 << 8)
+                           + ((size_t)response_header.contentLengthB0);
+        message = (char*)mem_alloc(content_length_r);
+        read(sock,message,content_length_r);
+    }
+    write(request->socket, status, strlen(status));
+    write(request->socket, header, strlen(header));
+    write(request->socket, message, content_length_r);
+
+    mem_free(message);
+
+    close(sock);
 }
