@@ -16,5 +16,9 @@ uhttp:$(OBJS) main.o
 	$(LD) $(LDFLAGS) main.o $(OBJS) -o $@
 
 clean:
-	rm $(OBJS) main.o
-	rm uhttp 
+	rm $(OBJS)
+	rm uhttp test main.o test.o
+
+test: test.o $(OBJS)
+	$(LD) $(LDFLAGS) test.o $(OBJS) -o $@
+	./test

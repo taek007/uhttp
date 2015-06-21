@@ -25,7 +25,7 @@ http_request *wrap_http_request(int coming_socket, http_request *request) {
 
     token_remain = get_request_line(token_remain, request);
 
-    token_remain = wrap_request_head(token_remain, &request->head);
+    token_remain = get_request_head(token_remain, &request->head);
 
     token_remain += 4;  //  skip 2 \r\n
 
@@ -68,7 +68,7 @@ char* get_request_line(char* buffer, http_request* request){
 char* get_http_content(char* start, http_request* request){
 
     char content_length_string[10];
-    if (get_value_of_head(&request->head, "Content-Length",
+    if (get_head_value(&request->head, "Content-Length",
                        content_length_string, sizeof(content_length_string - 1))) {
         size_t content_length;
         sscanf(content_length_string, "%d", &content_length);
@@ -86,7 +86,7 @@ char* get_http_content(char* start, http_request* request){
     return NULL;
 }
 
-char* wrap_request_head(char* head_start, http_request_head* head){
+char*get_request_head(char *head_start, http_request_head *head){
 
     char* head_end = strstr(head_start, "\r\n\r\n");
     char* start = mem_alloc(head_end - head_start + 1);
@@ -127,7 +127,7 @@ unsigned int get_http_version(char *ver) {
     return ((hi << 8) | lo);
 }
 
-char* get_value_of_head(http_request_head* head, const char *key, char* value, size_t n){
+char* get_head_value(http_request_head *head, const char *key, char *value, size_t n){
 
     int i;
     size_t key_len = strlen(key);
