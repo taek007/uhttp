@@ -27,50 +27,6 @@ void test_http_parser(){
     }
 }
 
-void json_parse(){
-
-    char * string =  "{\"sitename\" : \"joys of programming\","
-            "\"tags\" : [ \"c\" , \"c++\", \"java\", \"PHP\" ],"
-        "\"author-details\": { \"name\" : \"Joys of Programming\", \"Number of Posts\" : 10 } }";
-    json_object *j_obj = json_tokener_parse(string);
-    enum json_type type = json_object_get_type(j_obj);
-
-    json_object_object_foreach(j_obj, key, val) {
-        printf("type: ");
-        type = json_object_get_type(val);
-        switch (type) {
-            case json_type_null:
-                printf("json_type_null\n");
-                break;
-            case json_type_boolean:
-                printf("json_type_boolean\n");
-                break;
-            case json_type_double:
-                printf("json_type_double\n");
-                break;
-            case json_type_int:
-                printf("json_type_int\n");
-                break;
-            case json_type_object:
-                printf("json_type_object\n");
-                break;
-            case json_type_array:
-                printf("json_type_array\n");
-                break;
-            case json_type_string:
-                printf("json_type_string\n");
-                break;
-        }
-    }
-}
-
-void test_read_conf_file() {
-
-    char* s = load_config_string("conf.json");
-    printf(s);
-    free_config_string(s);
-}
-
 void test_load_configure(){
 
     u_config* conf = parse_config(load_config_string("conf.json"));
@@ -87,12 +43,10 @@ void test_load_configure(){
 
 int main() {
 
+    printf("\ntest of http parser (data from case directory).\n");
     test_http_parser();
 
-    json_parse();
-
-    test_read_conf_file();
-
+    printf("\ntest of json config parser.\n");
     test_load_configure();
 
     return 0;
