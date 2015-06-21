@@ -3,6 +3,7 @@ LD=gcc
 
 CCFLAGS= -g
 LDFLAGS= -g
+LIBS=-ljson
 
 OBJS=http.o server.o mem.o fastcgi.o conf.o
 
@@ -13,12 +14,12 @@ everything:uhttp
 	$(CC) $(CCFLAGS) -c $<
 
 uhttp:$(OBJS) main.o 
-	$(LD) $(LDFLAGS) main.o $(OBJS) -o $@
+	$(LD) $(LDFLAGS) main.o $(OBJS) -o $@ $(LIBS)
 
 clean:
 	rm $(OBJS)
 	rm uhttp test main.o test.o
 
 test: test.o $(OBJS)
-	$(LD) $(LDFLAGS) test.o $(OBJS) -o $@
+	$(LD) $(LDFLAGS) test.o $(OBJS) -o $@ $(LIBS)
 	./test
