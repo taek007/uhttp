@@ -1,0 +1,5 @@
+GET /index.html HTTP/1.1
+Cookie: user=Ncm20nc2evn
+Host: localhost:8000
+Reference: none
+

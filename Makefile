@@ -4,7 +4,7 @@ LD=gcc
 CCFLAGS= -g
 LDFLAGS= -g
 
-OBJS=http.o server.o mem.o fastcgi.o
+OBJS=http.o server.o mem.o fastcgi.o conf.o
 
 all:uhttp
 everything:uhttp

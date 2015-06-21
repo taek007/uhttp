@@ -7,9 +7,9 @@
 
 #include <string.h>
 
-#define FASTCGI_HOST    "127.0.0.1"
-#define FASTCGI_PORT    9000
-#define FASTCGI_REQUEST_ID  1
+#define FCGI_HOST    "127.0.0.1"
+#define FCGI_PORT    9000
+#define FCGI_REQUEST_ID  1
 #define FCGI_VERSION_1 1
 #define FCGI_BEGIN_REQUEST 1
 #define FCGI_RESPONDER 1

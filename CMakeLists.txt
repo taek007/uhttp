@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS}")
 
 set(SOURCE_FILES main.c)
-add_executable(uhttp ${SOURCE_FILES} http.h http.c mem.h mem.c log.h server.h server.c fastcgi.h fastcgi.c)
+add_executable(uhttp ${SOURCE_FILES} http.h http.c mem.h mem.c log.h server.h server.c fastcgi.h fastcgi.c conf.h conf.c)
 
 target_link_libraries(uhttp
     pthread

@@ -1,0 +1,7 @@
+POST /index.html HTTP/1.1
+Cookie: user=Ncm20nc2evn
+Host: localhost:8000
+Reference: none
+Content-Length: 23
+
+xxx=cccvv&sss=2kkjncks

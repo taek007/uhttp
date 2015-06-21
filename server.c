@@ -198,15 +198,15 @@ int cat_php_file(http_request *request) {
 
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr(FASTCGI_HOST);
-    serv_addr.sin_port = htons(FASTCGI_PORT);
+    serv_addr.sin_addr.s_addr = inet_addr(FCGI_HOST);
+    serv_addr.sin_port = htons(FCGI_PORT);
 
     if (-1 == connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) {
         return 404;
     }
 
     FCGI_BeginRequestRecord begin_record;
-    begin_record.header = makeHeader(FCGI_BEGIN_REQUEST, FASTCGI_REQUEST_ID,
+    begin_record.header = makeHeader(FCGI_BEGIN_REQUEST, FCGI_REQUEST_ID,
                                     sizeof(begin_record.body), 0);
     begin_record.body = makeBeginRequestBody(FCGI_RESPONDER);
 
@@ -238,7 +238,7 @@ int cat_php_file(http_request *request) {
         params_record->nameLength = (unsigned char)strlen(params[i][0]);
         params_record->valueLength = (unsigned char)strlen(params[i][1]);
         params_record->header = makeHeader(FCGI_PARAMS,
-                                           FASTCGI_REQUEST_ID,content_length,padding_length);
+                                           FCGI_REQUEST_ID,content_length,padding_length);
         memset(params_record->data,0, content_length+padding_length);
         memcpy(params_record->data,params[i][0], strlen(params[i][0]));
         memcpy(params_record->data + strlen(params[i][0]),
@@ -253,7 +253,7 @@ int cat_php_file(http_request *request) {
     }
 
     FCGI_Header stdin_header;
-    stdin_header = makeHeader(FCGI_STDIN,FASTCGI_REQUEST_ID,0,0);
+    stdin_header = makeHeader(FCGI_STDIN, FCGI_REQUEST_ID,0,0);
     write(sock,&stdin_header,sizeof(stdin_header));
 
     FCGI_Header response_header;
