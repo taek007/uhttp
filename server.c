@@ -13,7 +13,7 @@
 #include "fastcgi.h"
 #include "mem.h"
 
-#define WWW_ROOT "/home/hackeris"
+char WWW_ROOT[250];
 
 void handle_http_request(http_request *request) {
 
@@ -87,13 +87,12 @@ void handle_coming_socket(void *_sock) {
     handle_http_request(&request);
 }
 
-
 void start_http_server(u_config* config) {
+
+    strcpy(WWW_ROOT, config->web_root);
 
     int server_socket = create_server_socket(
             inet_addr(config->ip_address),config->port);
-
-    int client_socket;
 
     if (listen(server_socket, 10) == -1) {
         printf("listen socket error: %s(errno: %d)\n", strerror(errno), errno);
@@ -102,6 +101,7 @@ void start_http_server(u_config* config) {
 
     printf("waiting for clients.\n");
     while (1) {
+        int client_socket;
         //	wait for client's connection.
         if ((client_socket = accept(server_socket, (struct sockaddr *) NULL,
                                     NULL)) == -1) {
@@ -186,7 +186,6 @@ int cat_php_file(http_request *request) {
     ssize_t str_len;
     size_t content_length_r;
     char msg[50];
-    char buf[1024];
 
     char status[] = "HTTP/1.1 200 OK"CRLF;
     char header[] = "Server: NHTTP"CRLF;
