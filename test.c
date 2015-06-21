@@ -9,6 +9,7 @@
 #include <string.h>
 #include <json/json.h>
 #include "http.h"
+#include "conf.h"
 
 void test_http_parser(){
 
@@ -63,11 +64,25 @@ void json_parse(){
     }
 }
 
-void test_conf_file() {
+void test_read_conf_file() {
 
     char* s = load_config_string("conf.json");
     printf(s);
     free_config_string(s);
+}
+
+void test_load_configure(){
+
+    u_config* conf = parse_config(load_config_string("conf.json"));
+    if(NULL == conf){
+        printf("error loading conf\n");
+        return;
+    }
+
+    printf("address: %s:%d\n", conf->ip_address, conf->port);
+    printf("web root: %s\n", conf->web_root);
+
+    free_config(conf);
 }
 
 int main() {
@@ -76,7 +91,9 @@ int main() {
 
     json_parse();
 
-    test_conf_file();
+    test_read_conf_file();
+
+    test_load_configure();
 
     return 0;
 }
