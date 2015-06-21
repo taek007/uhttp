@@ -15,6 +15,8 @@ typedef struct _u_config{
     char* web_root;
 }u_config;
 
+u_config* load_config_file(char* file);
+
 char* load_config_string(char* file);
 
 void free_config_string(char* str);

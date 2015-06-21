@@ -8,7 +8,6 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
 
 #include "server.h"
 #include "fastcgi.h"
@@ -51,7 +50,7 @@ void handle_http_request(http_request *request) {
 }
 
 
-int create_server_socket(unsigned short port) {
+int create_server_socket(in_addr_t address,unsigned short port) {
 
     int server_socket;
     struct sockaddr_in server_address;
@@ -64,7 +63,7 @@ int create_server_socket(unsigned short port) {
 
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_address.sin_addr.s_addr = address;
     server_address.sin_port = htons(port);
 
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -89,9 +88,11 @@ void handle_coming_socket(void *_sock) {
 }
 
 
-void start_http_server() {
+void start_http_server(u_config* config) {
 
-    int server_socket = create_server_socket(8000);
+    int server_socket = create_server_socket(
+            inet_addr(config->ip_address),config->port);
+
     int client_socket;
 
     if (listen(server_socket, 10) == -1) {

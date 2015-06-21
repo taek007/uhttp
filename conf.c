@@ -8,6 +8,18 @@
 #include "conf.h"
 #include "mem.h"
 
+
+u_config* load_config_file(char* file){
+
+    char* conf_string = load_config_string(file);
+    if(NULL == conf_string){
+        return NULL;
+    }
+    u_config* config = parse_config(conf_string);
+    free_config_string(conf_string);
+    return config;
+}
+
 char* load_config_string(char* file){
 
     FILE *fp = fopen(file, "r");
