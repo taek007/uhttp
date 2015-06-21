@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "log.h"
 
-FILE* log_file;
+FILE* log_file = 0;
 
 void load_log_config(u_config* config){
 

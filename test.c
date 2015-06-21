@@ -14,6 +14,8 @@
 void test_http_parser(){
 
     int count = 3;
+    extern FILE* log_file;
+    log_file = stdout;
     char* test_case[] = {"case/case00.txt","case/case01.txt","case/case02.txt"};
     int i;
     http_request request;
@@ -37,6 +39,7 @@ void test_load_configure(){
 
     printf("address: %s:%d\n", conf->ip_address, conf->port);
     printf("web root: %s\n", conf->web_root);
+    printf("log file: %s\n", conf->log_file);
 
     free_config(conf);
 }
