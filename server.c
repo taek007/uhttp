@@ -16,6 +16,7 @@
 static char WWW_ROOT[250];
 
 int running = 1;
+int server_socket = -1;
 
 void handle_http_request(http_request *request) {
 
@@ -93,7 +94,7 @@ void start_http_server(u_config* config) {
 
     strcpy(WWW_ROOT, config->web_root);
 
-    int server_socket = create_server_socket(
+    server_socket = create_server_socket(
             inet_addr(config->ip_address),config->port);
 
     if (listen(server_socket, 10) == -1) {
@@ -107,9 +108,13 @@ void start_http_server(u_config* config) {
         //	wait for client's connection.
         if ((client_socket = accept(server_socket, (struct sockaddr *) NULL,
                                     NULL)) == -1) {
-            //	if failed
-            printf("accept socket error: %s(errno: %d)", strerror(errno),
-                   errno);
+            if(running){
+                //	if failed
+                printf("accept socket error: %s(errno: %d)", strerror(errno),
+                       errno);
+            }else{
+                printf("the uhttp server exited.\n");
+            }
             break;
         }
 
@@ -122,6 +127,7 @@ void start_http_server(u_config* config) {
 void stop_http_server(){
 
     running = 0;
+    close(server_socket);
 }
 
 int cat_text_file(int sock, char *path) {
