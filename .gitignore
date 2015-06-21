@@ -2,3 +2,6 @@
 test
 uhttp
 *.o
+*.log
+autom4te.cache
+config.status
