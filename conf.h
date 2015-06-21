@@ -8,11 +8,13 @@
 #define CONF_IPADDRESS_KEY  "address"
 #define CONF_PORT_KEY       "port"
 #define CONF_WEBROOT_KEY    "webroot"
+#define CONF_LOG_KEY    "log"
 
 typedef struct _u_config{
     int ip_address;
     unsigned short port;
     char* web_root;
+    char* log_file;
 }u_config;
 
 u_config* load_config_file(char* file);

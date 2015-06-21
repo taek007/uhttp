@@ -18,6 +18,8 @@ void handle_coming_socket(void *_sock);
 
 void start_http_server(u_config* config);
 
+void stop_http_server();
+
 int cat_text_file(int sock, char *path);
 
 int cat_binary_file(int sock, char *path);

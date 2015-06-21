@@ -5,7 +5,7 @@ CCFLAGS= -g
 LDFLAGS= -g
 LIBS=-ljson
 
-OBJS=http.o server.o mem.o fastcgi.o conf.o
+OBJS=http.o server.o mem.o fastcgi.o conf.o log.o
 
 all:uhttp
 everything:uhttp

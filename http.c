@@ -51,7 +51,7 @@ char* get_request_line(char* buffer, http_request* request){
         request->query = strdup(query);
     }
 
-    logoutf("%s %s %s\n",method, path, version);
+    logoutf("%s %s %s\r\n",method, path, version);
 
     request->path = strdup(path);
 

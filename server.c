@@ -13,7 +13,9 @@
 #include "fastcgi.h"
 #include "mem.h"
 
-char WWW_ROOT[250];
+static char WWW_ROOT[250];
+
+int running = 1;
 
 void handle_http_request(http_request *request) {
 
@@ -100,7 +102,7 @@ void start_http_server(u_config* config) {
     }
 
     printf("waiting for clients.\n");
-    while (1) {
+    while (running) {
         int client_socket;
         //	wait for client's connection.
         if ((client_socket = accept(server_socket, (struct sockaddr *) NULL,
@@ -115,6 +117,11 @@ void start_http_server(u_config* config) {
     }
 
     close(server_socket);
+}
+
+void stop_http_server(){
+
+    running = 0;
 }
 
 int cat_text_file(int sock, char *path) {
