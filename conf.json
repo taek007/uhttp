@@ -1,8 +1,8 @@
 {
   "address": "0.0.0.0",
   "port": 8000,
-  "web_root": "/home/hackeris",
-  "log": "/home/hackeris/uhttp.log",
+  "web_root": "/var/www",
+  "log": "/var/log/uhtto.log",
   "cgi_host": "127.0.0.1",
   "cgi_port": 9000
 }
