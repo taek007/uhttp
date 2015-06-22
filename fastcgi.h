@@ -5,6 +5,7 @@
 #ifndef UHTTP_FASTCGI_H
 #define UHTTP_FASTCGI_H
 
+#include <sys/types.h>
 #include <string.h>
 
 #define FCGI_REQUEST_ID  1
@@ -46,13 +47,6 @@ typedef struct{
 
 typedef struct{
     FCGI_Header header;
-    unsigned char nameLength;
-    unsigned char valueLength;
-    unsigned char data[0];
-}FCGI_ParamsRecord;
-
-typedef struct{
-    FCGI_Header header;
     unsigned char data[0];
 }FCGI_ContentRecord;
 
@@ -70,5 +64,7 @@ FCGI_Header makeHeader(
  */
 FCGI_BeginRequestBody makeBeginRequestBody(
         int role);
+
+FCGI_ContentRecord* pack_params(char *params[][2], size_t* pack_size);
 
 #endif //UHTTP_FASTCGI_H

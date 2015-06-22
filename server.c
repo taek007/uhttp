@@ -165,6 +165,7 @@ void server_main_loop(int server_socket){
             break;
         }
 
+        //handle_coming_socket(client_socket);
         fork_client_thread(client_socket);
     }
 }
@@ -304,41 +305,31 @@ int cat_php_file(http_request *request) {
     strcpy(msg, WWW_ROOT);
     strcat(msg, request->path);
 
+    char content_length_string[10] = { 0 };
+    sprintf(content_length_string,"%d",request->content_length);
     char *params[][2] = {
             {"SCRIPT_FILENAME", msg},
             {"REQUEST_METHOD",  request->method ? "POST" : "GET"},
+            {"CONTENT_TYPE", "application/x-www-form-urlencoded"},
             {"QUERY_STRING",    request->query},
+            {"CONTENT_LENGTH",    content_length_string},
             {NULL, NULL}
     };
 
-    size_t i, content_length, padding_length;
-    FCGI_ParamsRecord *params_record;
-    for (i = 0; params[i][0] != NULL; i++) {
-        if (params[i][1] == NULL) {
-            continue;
-        }
-        content_length = strlen(params[i][0]) + strlen(params[i][1]) + 2;
-        padding_length = (content_length % 8) == 0 ? 0 : 8 - (content_length % 8);
-        params_record = mem_alloc(
-                sizeof(FCGI_ParamsRecord) + content_length + padding_length);
-        params_record->nameLength = (unsigned char) strlen(params[i][0]);
-        params_record->valueLength = (unsigned char) strlen(params[i][1]);
-        params_record->header = makeHeader(FCGI_PARAMS,
-                                           FCGI_REQUEST_ID, content_length, padding_length);
-        memset(params_record->data, 0, content_length + padding_length);
-        memcpy(params_record->data, params[i][0], strlen(params[i][0]));
-        memcpy(params_record->data + strlen(params[i][0]),
-               params[i][1], strlen(params[i][1]));
-        str_len = write(sock, params_record, 8 + content_length + padding_length);
+    FCGI_ContentRecord *params_record;
+    size_t pack_size;
+    params_record = pack_params(params, &pack_size);
+    if(write(sock, params_record, pack_size) < 0){
+        return errno;
+    }
+    mem_free(params_record);
 
-        if (-1 == str_len) {
-            return errno;
-        }
-
-        free(params_record);
+    FCGI_Header empty_header = makeHeader(FCGI_PARAMS, FCGI_REQUEST_ID, 0,0);
+    if(write(sock, &empty_header, sizeof(empty_header)) < 0){
+        return errno;
     }
 
-
+    size_t content_length, padding_length;
     if(request->method == METHOD_POST && request->content_length){
         FCGI_ContentRecord* content_record;
         content_length = request->content_length;
@@ -348,11 +339,12 @@ int cat_php_file(http_request *request) {
                 FCGI_STDIN, FCGI_REQUEST_ID, content_length, padding_length);
         memset(content_record->data,0,content_length+padding_length);
         memcpy(content_record->data,request->content, content_length);
-        if(write(sock,content_record,
+        if(write(sock, content_record,
                  sizeof(FCGI_ContentRecord) + content_length + padding_length)<0){
             return errno;
         }
     }
+
     FCGI_Header stdin_header;
     stdin_header = makeHeader(FCGI_STDIN, FCGI_REQUEST_ID, 0, 0);
     if(write(sock, &stdin_header, sizeof(stdin_header)) < 0){
@@ -397,3 +389,5 @@ int cat_php_file(http_request *request) {
     close(sock);
     return errno;
 }
+
+
