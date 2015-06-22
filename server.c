@@ -9,7 +9,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <bits/signum.h>
 #include <signal.h>
 
 #include "server.h"
@@ -29,7 +28,7 @@ int server_socket = -1;
 void handle_http_request(http_request *request) {
 
     char response[] = "HTTP/1.1 200 OK"CRLF
-            "Server: NHTTP"CRLF
+            "Server: uhttp"CRLF
             "Content-Type: text/html;"CRLF CRLF
             "<h1>It works!</h1>";
 
@@ -196,7 +195,7 @@ int cat_text_file(int sock, char *path) {
     FILE *fp;
 
     char status[] = "HTTP/1.1 200 OK"CRLF;
-    char header[] = "Server: NHTTP"CRLF
+    char header[] = "Server: uhttp"CRLF
             "Content-Type: text/html;"CRLF CRLF;
 
     char filepath[260];
@@ -235,7 +234,7 @@ int cat_binary_file(int sock, char *path) {
     ssize_t n;
 
     char status[] = "HTTP/1.1 200 OK"CRLF;
-    char header[] = "Server: NHTTP"CRLF
+    char header[] = "Server: uhttp"CRLF
             "Content-Type: image/jpeg;"CRLF CRLF;
 
     char filepath[260];
@@ -275,7 +274,7 @@ int cat_php_file(http_request *request) {
     char msg[50];
 
     char status[] = "HTTP/1.1 200 OK"CRLF;
-    char header[] = "Server: NHTTP"CRLF;
+    char header[] = "Server: uhttp"CRLF;
 
     sock = socket(PF_INET, SOCK_STREAM, 0);
 
@@ -311,6 +310,7 @@ int cat_php_file(http_request *request) {
             {"SCRIPT_FILENAME", msg},
             {"REQUEST_METHOD",  request->method ? "POST" : "GET"},
             {"CONTENT_TYPE", "application/x-www-form-urlencoded"},
+            {"SERVER_SOFTWARE", "uhttp"},
             {"QUERY_STRING",    request->query},
             {"CONTENT_LENGTH",    content_length_string},
             {NULL, NULL}
@@ -351,41 +351,45 @@ int cat_php_file(http_request *request) {
         return errno;
     }
 
-    FCGI_Header response_header;
-    char *message;
-    str_len = read(sock, &response_header, sizeof(response_header));
-    if (-1 == str_len) {
-        return errno;
-    }
-
-    if (response_header.type == FCGI_STDOUT) {
-        content_length_r = ((size_t) response_header.contentLengthB1 << 8)
-                           + ((size_t) response_header.contentLengthB0);
-        message = (char *) mem_alloc(content_length_r);
-        read(sock, message, content_length_r);
-    }
-    if (response_header.type == FCGI_STDERR) {
-        content_length_r = ((size_t) response_header.contentLengthB1 << 8)
-                           + ((size_t) response_header.contentLengthB0);
-        message = (char *) mem_alloc(content_length_r);
-        read(sock, message, content_length_r);
-    }
     if(write(request->socket, status, strlen(status))<0){
         goto err;
     }
     if(write(request->socket, header, strlen(header))<0){
         goto err;
     }
-    if(write(request->socket, message, content_length_r)< 0){
-        goto err;
+
+    FCGI_Header response_header;
+    char *message;
+    while(1){
+        str_len = read(sock, &response_header, sizeof(response_header));
+        if (-1 == str_len) {
+            return errno;
+        }
+        if (response_header.type == FCGI_STDOUT) {
+            content_length_r = ((size_t) response_header.contentLengthB1 << 8)
+                               + ((size_t) response_header.contentLengthB0)
+                               + response_header.paddingLength;
+            message = (char *) mem_alloc(content_length_r);
+            read(sock, message, content_length_r);
+        }
+        else if (response_header.type == FCGI_STDERR) {
+            content_length_r = ((size_t) response_header.contentLengthB1 << 8)
+                               + ((size_t) response_header.contentLengthB0)
+                               + response_header.paddingLength;
+            message = (char *) mem_alloc(content_length_r);
+            read(sock, message, content_length_r);
+        }else{
+            break;
+        }
+        if(write(request->socket, message, content_length_r)< 0){
+            goto err;
+        }
+        mem_free(message);
     }
 
-    mem_free(message);
     close(sock);
     return 0;
-
     err:
-    mem_free(message);
     close(sock);
     return errno;
 }
