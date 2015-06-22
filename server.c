@@ -109,7 +109,7 @@ void load_default_config(){
 
     strcpy(LISTEN_ADDRESS,"0.0.0.0");
     PORT = 8000;
-    strcpy(WWW_ROOT, "/home/hackeris");
+    strcpy(WWW_ROOT, "/var/www");
     strcpy(FCGI_HOST, "127.0.0.1");
     FCGI_PORT = 9000;
 
@@ -301,7 +301,7 @@ int cat_php_file(http_request *request) {
         return errno;
     }
 
-    strcpy(msg, "/home/hackeris");
+    strcpy(msg, WWW_ROOT);
     strcat(msg, request->path);
 
     char *params[][2] = {
@@ -339,10 +339,10 @@ int cat_php_file(http_request *request) {
     }
 
 
-    if(request->method == METHOD_POST && request->content){
+    if(request->method == METHOD_POST && request->content_length){
         FCGI_ContentRecord* content_record;
-        content_length = strlen(request->content);
-        padding_length = (8 - content_length % 8) % 8;
+        content_length = request->content_length;
+        padding_length = (content_length % 8) == 0 ? 0 : 8 - (content_length % 8);
         content_record = mem_alloc(sizeof(FCGI_ContentRecord) + content_length + padding_length);
         content_record->header = makeHeader(
                 FCGI_STDIN, FCGI_REQUEST_ID, content_length, padding_length);

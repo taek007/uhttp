@@ -27,6 +27,7 @@ typedef struct _http_request {
     char *query;
     http_request_head head;
     char *content;
+    size_t content_length;
     int socket;
 } http_request;
 

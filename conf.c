@@ -8,7 +8,7 @@
 #include "conf.h"
 #include "mem.h"
 
-#define FREE(p, f)    do{if(p)f(p);p=NULL;}while(0)
+#define FREE(p, f)    do{if(p){f(p);p=NULL;}}while(0)
 
 
 u_config* load_config_file(char* file){
@@ -85,11 +85,13 @@ u_config *parse_config(char* conf_string){
 
 void free_config(u_config* config){
 
-    FREE(config->ip_address, mem_free);
-    FREE(config->web_root, mem_free);
-    FREE(config->log_file, mem_free);
-    FREE(config->fcgi_host, mem_free);
-    config->ip_address = NULL;
-    config->port = NULL;
-    config->port = 0;
+    if(config) {
+        FREE(config->ip_address, mem_free);
+        FREE(config->web_root, mem_free);
+        FREE(config->log_file, mem_free);
+        FREE(config->fcgi_host, mem_free);
+        config->ip_address = NULL;
+        config->port = NULL;
+        config->port = 0;
+    }
 }

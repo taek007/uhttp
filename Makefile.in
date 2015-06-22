@@ -7,27 +7,33 @@ LIBS=-ljson -lpthread
 
 OBJS=http.o server.o mem.o fastcgi.o conf.o log.o svrctl.o
 
-all:uhttp
-everything:uhttp
+TARGET=uhttp
+
+all:$(TARGET)
+everything:$(TARGET)
 
 %.o:	%.c
 	$(CC) $(CCFLAGS) -c $<
 
-uhttp:$(OBJS) main.o 
+$(TARGET):$(OBJS) main.o test.o
 	$(LD) $(LDFLAGS) main.o $(OBJS) -o $@ $(LIBS)
+	$(LD) $(LDFLAGS) test.o $(OBJS) -o test $(LIBS)
 
 clean:
 	rm $(OBJS)
-	rm uhttp test main.o test.o
+	rm uhttp main.o test.o test
+	yes|rm backup-* *.deb
 
-test: test.o $(OBJS)
+test: $(OBJS) main.o test.o
 	$(LD) $(LDFLAGS) test.o $(OBJS) -o $@ $(LIBS)
+	$(LD) $(LDFLAGS) main.o $(OBJS) -o $(TARGET) $(LIBS)
 	./test
 
 package:
-	sudo checkinstall --pkgversion `cat version`
+	sudo checkinstall --pkgversion `tail version -n 1`
+	sudo dpkg -r uhttp
 
-install:
-	mv ./uhttp /usr/bin/uhttp
+install: $(TARGET)
+	cp ./uhttp /usr/bin/uhttp
 	mkdir /etc/uhttp
 	cp conf.json /etc/uhttp

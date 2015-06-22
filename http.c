@@ -72,6 +72,7 @@ char* get_http_content(char* start, http_request* request){
                        content_length_string, sizeof(content_length_string - 1))) {
         size_t content_length;
         sscanf(content_length_string, "%d", &content_length);
+        request->content_length = content_length;
         request->content = mem_alloc(content_length + 1);
         request->content[content_length] = '\0';
         memcpy(request->content, start, content_length);
