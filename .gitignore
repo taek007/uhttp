@@ -5,3 +5,5 @@ uhttp
 *.log
 autom4te.cache
 config.status
+*.deb
+*.tgz

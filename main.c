@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[]) {
 
-    u_config* config = load_config_file("conf.json");
+    u_config* config = load_config_file("/etc/uhttp/conf.json");
     load_log_config(config);
     init_srv_ctl();
 

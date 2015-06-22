@@ -23,3 +23,11 @@ clean:
 test: test.o $(OBJS)
 	$(LD) $(LDFLAGS) test.o $(OBJS) -o $@ $(LIBS)
 	./test
+
+package:
+	sudo checkinstall --pkgversion `cat version`
+
+install:
+	mv ./uhttp /usr/bin/uhttp
+	mkdir /etc/uhttp
+	cp conf.json /etc/uhttp
