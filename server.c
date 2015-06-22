@@ -13,14 +13,11 @@
 
 #include "server.h"
 #include "fastcgi.h"
-#include "mem.h"
 #include "log.h"
 
 static char LISTEN_ADDRESS[20];
 static unsigned short PORT;
 static char WWW_ROOT[250];
-static char FCGI_HOST[20];
-static unsigned short FCGI_PORT;
 
 int running = 1;
 int server_socket = -1;
@@ -109,8 +106,6 @@ void load_default_config(){
     strcpy(LISTEN_ADDRESS,"0.0.0.0");
     PORT = 8000;
     strcpy(WWW_ROOT, "/var/www");
-    strcpy(FCGI_HOST, "127.0.0.1");
-    FCGI_PORT = 9000;
 
     signal(SIGPIPE, SIG_IGN);
 }
@@ -128,13 +123,8 @@ void load_server_config(u_config* config){
         if(config->web_root){
             strcpy(WWW_ROOT, config->web_root);
         }
-        if(config->fcgi_host) {
-            strcpy(FCGI_HOST, config->fcgi_host);
-        }
-        if(config->fcgi_port){
-            FCGI_PORT = config->fcgi_port;
-        }
     }
+    load_fcgi_config(config);
 }
 
 void listen_socket(int server_socket){
@@ -267,131 +257,7 @@ int cat_binary_file(int sock, char *path) {
 
 int cat_php_file(http_request *request) {
 
-    int sock;
-    struct sockaddr_in serv_addr;
-    ssize_t str_len;
-    size_t content_length_r;
-    char msg[50];
-
-    char status[] = "HTTP/1.1 200 OK"CRLF;
-    char header[] = "Server: uhttp"CRLF;
-
-    sock = socket(PF_INET, SOCK_STREAM, 0);
-
-    if (sock < 0) {
-        return errno;
-    }
-
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr(FCGI_HOST);
-    serv_addr.sin_port = htons(FCGI_PORT);
-
-    if (-1 == connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) {
-        return errno;
-    }
-
-    FCGI_BeginRequestRecord begin_record;
-    begin_record.header = makeHeader(FCGI_BEGIN_REQUEST, FCGI_REQUEST_ID,
-                                     sizeof(begin_record.body), 0);
-    begin_record.body = makeBeginRequestBody(FCGI_RESPONDER);
-
-    str_len = write(sock, &begin_record, sizeof(begin_record));
-    if (-1 == str_len) {
-        return errno;
-    }
-
-    strcpy(msg, WWW_ROOT);
-    strcat(msg, request->path);
-
-    char content_length_string[10] = { 0 };
-    sprintf(content_length_string,"%d",request->content_length);
-    char *params[][2] = {
-            {"SCRIPT_FILENAME", msg},
-            {"REQUEST_METHOD",  request->method ? "POST" : "GET"},
-            {"CONTENT_TYPE", "application/x-www-form-urlencoded"},
-            {"SERVER_SOFTWARE", "uhttp"},
-            {"QUERY_STRING",    request->query},
-            {"CONTENT_LENGTH",    content_length_string},
-            {NULL, NULL}
-    };
-
-    FCGI_ContentRecord *params_record;
-    size_t pack_size;
-    params_record = pack_params(params, &pack_size);
-    if(write(sock, params_record, pack_size) < 0){
-        return errno;
-    }
-    mem_free(params_record);
-
-    FCGI_Header empty_header = makeHeader(FCGI_PARAMS, FCGI_REQUEST_ID, 0,0);
-    if(write(sock, &empty_header, sizeof(empty_header)) < 0){
-        return errno;
-    }
-
-    size_t content_length, padding_length;
-    if(request->method == METHOD_POST && request->content_length){
-        FCGI_ContentRecord* content_record;
-        content_length = request->content_length;
-        padding_length = (content_length % 8) == 0 ? 0 : 8 - (content_length % 8);
-        content_record = mem_alloc(sizeof(FCGI_ContentRecord) + content_length + padding_length);
-        content_record->header = makeHeader(
-                FCGI_STDIN, FCGI_REQUEST_ID, content_length, padding_length);
-        memset(content_record->data,0,content_length+padding_length);
-        memcpy(content_record->data,request->content, content_length);
-        if(write(sock, content_record,
-                 sizeof(FCGI_ContentRecord) + content_length + padding_length)<0){
-            return errno;
-        }
-    }
-
-    FCGI_Header stdin_header;
-    stdin_header = makeHeader(FCGI_STDIN, FCGI_REQUEST_ID, 0, 0);
-    if(write(sock, &stdin_header, sizeof(stdin_header)) < 0){
-        return errno;
-    }
-
-    if(write(request->socket, status, strlen(status))<0){
-        goto err;
-    }
-    if(write(request->socket, header, strlen(header))<0){
-        goto err;
-    }
-
-    FCGI_Header response_header;
-    char *message;
-    while(1){
-        str_len = read(sock, &response_header, sizeof(response_header));
-        if (-1 == str_len) {
-            return errno;
-        }
-        if (response_header.type == FCGI_STDOUT) {
-            content_length_r = ((size_t) response_header.contentLengthB1 << 8)
-                               + ((size_t) response_header.contentLengthB0)
-                               + response_header.paddingLength;
-            message = (char *) mem_alloc(content_length_r);
-            read(sock, message, content_length_r);
-        }
-        else if (response_header.type == FCGI_STDERR) {
-            content_length_r = ((size_t) response_header.contentLengthB1 << 8)
-                               + ((size_t) response_header.contentLengthB0)
-                               + response_header.paddingLength;
-            message = (char *) mem_alloc(content_length_r);
-            read(sock, message, content_length_r);
-        }else{
-            break;
-        }
-        if(write(request->socket, message, content_length_r)< 0){
-            goto err;
-        }
-        mem_free(message);
-    }
-
-    close(sock);
-    return 0;
-    err:
-    close(sock);
-    return errno;
+    return cgi_handle_request(request, WWW_ROOT);
 }
 
 

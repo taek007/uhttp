@@ -7,6 +7,8 @@
 
 #include <sys/types.h>
 #include <string.h>
+#include "http.h"
+#include "conf.h"
 
 #define FCGI_REQUEST_ID  1
 #define FCGI_VERSION_1 1
@@ -65,6 +67,10 @@ FCGI_Header makeHeader(
 FCGI_BeginRequestBody makeBeginRequestBody(
         int role);
 
+void load_fcgi_config(u_config* config);
+
 FCGI_ContentRecord* pack_params(char *params[][2], size_t* pack_size);
+
+int cgi_handle_request(http_request *request, char* www_root);
 
 #endif //UHTTP_FASTCGI_H
