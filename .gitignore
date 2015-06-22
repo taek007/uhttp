@@ -8,3 +8,4 @@ config.status
 *.deb
 *.tgz
 Makefile
+config.h
