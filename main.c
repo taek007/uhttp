@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
 
     start_http_server(config);
 
-    release_log_file();
+    close_log_file();
     free_config(config);
     return 0;
 }

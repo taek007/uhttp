@@ -11,8 +11,9 @@ FILE* log_file = 0;
 void load_log_config(u_config* config){
 
     FILE* fp;
-    if(NULL == config->log_file||
-            NULL == (fp = fopen(config->log_file, "w"))){
+    if(NULL == config
+       || NULL == config->log_file
+       || NULL == (fp = fopen(config->log_file, "w+"))){
 
         log_file = stdout;
         return;
@@ -20,7 +21,7 @@ void load_log_config(u_config* config){
     log_file = fp;
 }
 
-void release_log_file(){
+void close_log_file(){
 
     if(log_file != stdout){
         fclose(log_file);

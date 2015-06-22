@@ -76,10 +76,6 @@ char* get_http_content(char* start, http_request* request){
         request->content[content_length] = '\0';
         memcpy(request->content, start, content_length);
 
-        if(request->method==METHOD_POST){
-            request->query = strdup(request->content);
-        }
-
         return request->content;
     }
     request->content = NULL;

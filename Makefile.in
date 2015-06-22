@@ -3,7 +3,7 @@ LD=gcc
 
 CCFLAGS= -g
 LDFLAGS= -g
-LIBS=-ljson
+LIBS=-ljson -lpthread
 
 OBJS=http.o server.o mem.o fastcgi.o conf.o log.o svrctl.o
 

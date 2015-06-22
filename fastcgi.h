@@ -7,8 +7,6 @@
 
 #include <string.h>
 
-#define FCGI_HOST    "127.0.0.1"
-#define FCGI_PORT    9000
 #define FCGI_REQUEST_ID  1
 #define FCGI_VERSION_1 1
 #define FCGI_BEGIN_REQUEST 1
@@ -52,6 +50,11 @@ typedef struct{
     unsigned char valueLength;
     unsigned char data[0];
 }FCGI_ParamsRecord;
+
+typedef struct{
+    FCGI_Header header;
+    unsigned char data[0];
+}FCGI_ContentRecord;
 
 /*
  * 构造请求头部，返回FCGI_Header结构体

@@ -12,7 +12,7 @@ extern FILE* log_file;
 
 void load_log_config(u_config* config);
 
-void release_log_file();
+void close_log_file();
 
 int logoutf(const char* fmt,...);
 

@@ -7,14 +7,18 @@
 
 #define CONF_IPADDRESS_KEY  "address"
 #define CONF_PORT_KEY       "port"
-#define CONF_WEBROOT_KEY    "webroot"
+#define CONF_WEBROOT_KEY    "web_root"
 #define CONF_LOG_KEY    "log"
+#define CONF_FCGI_HOST_KEY  "cgi_host"
+#define CONF_FCGI_PORT_KEY  "cgi_port"
 
 typedef struct _u_config{
-    int ip_address;
+    char* ip_address;
     unsigned short port;
+    unsigned short fcgi_port;
     char* web_root;
     char* log_file;
+    char* fcgi_host;
 }u_config;
 
 u_config* load_config_file(char* file);

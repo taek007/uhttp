@@ -40,6 +40,7 @@ void test_load_configure(){
     printf("address: %s:%d\n", conf->ip_address, conf->port);
     printf("web root: %s\n", conf->web_root);
     printf("log file: %s\n", conf->log_file);
+    printf("cgi sock: %s:%d\n", conf->fcgi_host, conf->fcgi_port);
 
     free_config(conf);
 }

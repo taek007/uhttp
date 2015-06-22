@@ -9,4 +9,5 @@ add_executable(uhttp ${SOURCE_FILES} http.h http.c mem.h mem.c log.h server.h se
 
 target_link_libraries(uhttp
     pthread
+    json
 )

@@ -8,6 +8,8 @@
 #include "conf.h"
 #include "mem.h"
 
+#define FREE(p, f)    do{if(p)f(p);p=NULL;}while(0)
+
 
 u_config* load_config_file(char* file){
 
@@ -70,6 +72,12 @@ u_config *parse_config(char* conf_string){
         }else if(0 == strcmp(CONF_LOG_KEY, key)
                 && type==json_type_string){
             config->log_file = strdup(json_object_get_string(value));
+        }else if(0 == strcmp(CONF_FCGI_HOST_KEY, key)
+                && type==json_type_string){
+            config->fcgi_host = strdup(json_object_get_string(value));
+        }else if(0 == strcmp(CONF_FCGI_PORT_KEY, key)
+                 && type == json_type_int){
+            config->fcgi_port = json_object_get_int(value);
         }
     }
     return config;
@@ -77,8 +85,10 @@ u_config *parse_config(char* conf_string){
 
 void free_config(u_config* config){
 
-    mem_free(config->ip_address);
-    mem_free(config->web_root);
+    FREE(config->ip_address, mem_free);
+    FREE(config->web_root, mem_free);
+    FREE(config->log_file, mem_free);
+    FREE(config->fcgi_host, mem_free);
     config->ip_address = NULL;
     config->port = NULL;
     config->port = 0;
