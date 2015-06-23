@@ -173,6 +173,7 @@ int cgi_handle_request(http_request *request, char* www_root) {
                  sizeof(FCGI_ContentRecord) + content_length + padding_length)<0){
             return errno;
         }
+		mem_free(content_record);
     }
 
     FCGI_Header stdin_header;
