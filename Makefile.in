@@ -1,7 +1,7 @@
 CC=gcc
 LD=gcc
 
-CCFLAGS= -g
+CCFLAGS= -g --std=c99
 LDFLAGS= -g
 LIBS=-ljson -lpthread
 
