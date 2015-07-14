@@ -31,7 +31,7 @@ test: $(OBJS) main.o test.o
 
 package:
 	sudo checkinstall --pkgversion `tail version -n 1`
-	sudo dpkg -r uhttp
+#	sudo dpkg -r uhttp
 
 install: $(TARGET)
 	cp ./uhttp /usr/bin/uhttp
