@@ -1,5 +1,5 @@
-#include "server.h"
 #include "conf.h"
+#include "server.h"
 #include "log.h"
 #include "svrctl.h"
 
