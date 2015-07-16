@@ -22,6 +22,16 @@ static char WWW_ROOT[250];
 int running = 1;
 int server_socket = -1;
 
+char not_found[] = "HTTP/1.1 404 NotFound"CRLF
+        "Server: uhttp"CRLF
+        "Content-Type: text/html;"CRLF CRLF
+        "<h1>Not found!</h1>";
+
+char bad_request[] = "HTTP/1.1 200 OK"CRLF
+        "Server: uhttp"CRLF
+        "Content-Type: text/html;"CRLF CRLF
+        "<h1>Bad request</h1>";
+
 void handle_http_request(http_request *request) {
 
     char response[] = "HTTP/1.1 200 OK"CRLF
@@ -29,6 +39,11 @@ void handle_http_request(http_request *request) {
             "Content-Type: text/html;"CRLF CRLF
             "<h1>It works!</h1>";
 
+	if(request->path == NULL){
+		send(request->socket, bad_request, strlen(bad_request), 0);
+		free_http_request(request);
+		return;
+	}
     char *ext = strrchr(request->path, '.');
 
     if (ext != NULL) {
@@ -192,19 +207,19 @@ int cat_text_file(int sock, char *path) {
     strcpy(filepath, WWW_ROOT);
     strcat(filepath, path);
 
+    fp = fopen(filepath, "r");
+
+    if (NULL == fp) {
+		send(sock, not_found, strlen(not_found), 0);
+        return 404;
+    }
+
     if(write(sock, status, strlen(status)) < 0){
         return errno;
     }
     if(write(sock, header, strlen(header)) < 0){
         return errno;
     }
-
-    fp = fopen(filepath, "r");
-
-    if (NULL == fp) {
-        return 404;
-    }
-
     fgets(buf, sizeof(buf), fp);
     while (!feof(fp)) {
         if(write(sock, buf, strlen(buf)) < 0){
@@ -231,18 +246,18 @@ int cat_binary_file(int sock, char *path) {
     strcpy(filepath, WWW_ROOT);
     strcat(filepath, path);
 
+    fp = fopen(filepath, "rb");
+    if (NULL == fp) {
+		send(sock, not_found, strlen(not_found), 0);
+        return errno;
+    }
+
     if(write(sock, status, strlen(status)) < 0){
         return errno;
     }
     if(write(sock, header, strlen(header)) < 0){
         return errno;
     }
-
-    fp = fopen(filepath, "rb");
-    if (NULL == fp) {
-        return errno;
-    }
-
     n = fread(buf, 1, sizeof(buf), fp);
     while (!feof(fp)) {
         if(write(sock, buf, n) < 0){
